@@ -9,9 +9,10 @@
 
 var MarkEditor = require('../src/index');
 
-new MarkEditor({
+var me = new MarkEditor({
     el: '#textarea'
 });
 
 
+window.me = me;
 

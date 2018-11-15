@@ -7,6 +7,7 @@
 'use strict';
 
 var UI = require('blear.ui');
+var array = require('blear.utils.array');
 var object = require('blear.utils.object');
 var string = require('blear.utils.string');
 var textarea = require('blear.utils.textarea');
@@ -49,6 +50,50 @@ var MarkEditor = UI.extend({
     },
 
     /**
+     * 获取选区里的行信息
+     * @param sel
+     * @returns {{line: number, start: number, end: number, selStart: number, selEnd: number, text: string, inSel: boolean}[]}
+     */
+    lines: function (sel) {
+        var the = this;
+        var start = sel[0];
+        var end = sel[1];
+        var splits = the[_textareaEl].value.split(/\n/);
+        var pass = 0;
+        var lines = [];
+
+        array.each(splits, function (index, text) {
+            var length = text.length;
+            var lineStart = pass;
+            var lineEnd = pass + length;
+            pass += length + 1;
+
+            // 不选区的行
+            if (lineEnd < start || lineStart > end) {
+                lines.push({
+                    line: index,
+                    start: lineStart,
+                    end: lineEnd,
+                    text: text,
+                    inSel: false
+                });
+            } else {
+                lines.push({
+                    line: index,
+                    start: lineStart,
+                    end: lineEnd,
+                    selStart: Math.max(lineStart, start),
+                    selEnd: Math.min(lineEnd, end),
+                    text: text,
+                    inSel: true
+                });
+            }
+        });
+
+        return lines;
+    },
+
+    /**
      * 绑定热键
      * @param key {string} 键
      * @param callback {function} 回调
@@ -73,10 +118,33 @@ var MarkEditor = UI.extend({
      */
     indent: function () {
         var the = this;
-        var tab = string.repeat(' ', options.tabSize);
+        var options = the[_options];
+        var tabSize = options.tabSize;
+        var tab = string.repeat(' ', tabSize);
         var sel = textarea.getSelection(the[_textareaEl]);
+        var lines = the.lines(sel);
+        var value = '';
+        var selStart = -1;
+        var selEnd = -1;
+        var tabs = 0;
 
-        textarea.insert(the[_textareaEl], tab, sel, false);
+        array.each(lines, function (index, line) {
+            var text1 = line.text;
+
+            if (line.inSel) {
+                if (selStart === -1) {
+                    selStart = line.selStart + tabSize;
+                }
+
+                tabs++;
+                selEnd = line.selEnd + tabSize * tabs;
+                value += tab + text1 + '\n';
+            } else {
+                value += text1 + '\n';
+            }
+        });
+        the[_textareaEl].value = value;
+        textarea.setSelection(the[_textareaEl], [selStart, selEnd]);
         the[_pushHistory]();
         return the;
     },
@@ -87,7 +155,48 @@ var MarkEditor = UI.extend({
      */
     outdent: function () {
         var the = this;
+        var options = the[_options];
+        var tabSize = options.tabSize;
+        var tab = string.repeat(' ', tabSize);
+        var tabRE = new RegExp('^\\s{' + tabSize + '}');
+        var sel = textarea.getSelection(the[_textareaEl]);
+        var lines = the.lines(sel);
+        var value = '';
+        var selStart = -1;
+        var selEnd = -1;
+        var tabs = 0;
 
+        array.each(lines, function (index, line) {
+            var text1 = line.text;
+
+            if (line.inSel) {
+                var text2 = text1.replace(tabRE, '');
+                var selStart1 = line.selStart;
+
+                // 没有任何缩进了
+
+                if (text2 === text1) {
+                    value += text1 + '\n';
+
+                    if (selStart === -1) {
+                        selStart = selStart1;
+                    }
+                } else {
+                    value += text2 + '\n';
+                    tabs++;
+
+                    if (selStart === -1) {
+                        selStart = selStart1 - tabSize;
+                    }
+                }
+
+                selEnd = line.selEnd - tabSize * tabs;
+            } else {
+                value += text1 + '\n';
+            }
+        });
+        the[_textareaEl].value = value;
+        textarea.setSelection(the[_textareaEl], [selStart, selEnd]);
         the[_pushHistory]();
         return the;
     }
@@ -150,7 +259,13 @@ proto[_pushHistory] = function () {
     var val = the[_textareaEl].value;
 
     // 两次记录完全一致，则不入栈
-    if (active && active.sel[0] === sel[0] && active.sel[1] === sel[1] && val === active.val) {
+    if (
+        active &&
+        // 选区一致
+        active.sel[0] === sel[0] && active.sel[1] === sel[1] &&
+        // 内容一致
+        val === active.val
+    ) {
         return;
     }
 
