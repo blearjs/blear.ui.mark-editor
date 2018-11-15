@@ -18,10 +18,43 @@
     <meta name="description" content="描述语句">
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
     <title>index.html</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 20px 30px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        textarea {
+            width: 800px;
+            height: 400px;
+            display: block;
+            border: 2px solid #ddd;
+            font-size: 18px;
+            padding: 10px;
+        }
+
+        textarea:focus {
+            border-color: #59a9ff;
+            outline: 0;
+        }
+    </style>
 </head>
 <body ontouchstart="">
 
 <h1>example</h1>
+
+<textarea id="textarea" placeholder="markdown 纯文本编辑器"></textarea>
 
 <script src="/node_modules/coolie.js/coolie.js"
 data-config="/examples/coolie-config.js"

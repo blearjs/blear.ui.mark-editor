@@ -7,6 +7,11 @@
 
 'use strict';
 
+var MarkEditor = require('../src/index');
+
+new MarkEditor({
+    el: '#textarea'
+});
 
 
 
