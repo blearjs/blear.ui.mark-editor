@@ -1,0 +1,49 @@
+{
+  "name": "blear.ui.mark-editor",
+  "version": "1.0.0",
+  "description": "markdown 纯文本编辑器",
+  "scripts": {
+    "live": "browser-sync start --config bs-config.js",
+    "test": "node ./node_modules/.bin/karma start karma.conf.js --single-run",
+    "prepublish": "npm test"
+  },
+  "preferGlobal": false,
+  "bin": {},
+  "engines": {
+    "node": ">=6.0.0",
+    "iojs": ">=1.0.0"
+  },
+  "main": "src/index.js",
+  "keywords": [
+    "blear",
+    "cloudcome",
+    "ydr.me"
+  ],
+  "author": {
+    "name": "cloudcome",
+    "email": "cloudcome@163.com",
+    "url": "https://ydr.me"
+  },
+  "contributors": [],
+  "homepage": "https://github.com/blearjs/blear.ui.mark-editor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/blearjs/blear.ui.mark-editor"
+  },
+  "bugs": {
+    "url": "https://github.com/blearjs/blear.ui.mark-editor/issues"
+  },
+  "dependencies": {},
+  "peerDependencies": {},
+  "devDependencies": {
+    "coolie.js": "2.3.1",
+    "jasmine-core": "2.8.0",
+    "karma": "1.7.1",
+    "karma-chrome-launcher": "2.2.0",
+    "karma-coolie": "2.0.2",
+    "karma-coverage": "1.1.1",
+    "karma-coveralls": "1.1.2",
+    "karma-jasmine": "1.1.0"
+  },
+  "license": "MIT"
+}
