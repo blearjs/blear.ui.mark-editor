@@ -11,6 +11,7 @@ var array = require('blear.utils.array');
 var object = require('blear.utils.object');
 var string = require('blear.utils.string');
 var textarea = require('blear.utils.textarea');
+var access = require('blear.utils.access');
 var fun = require('blear.utils.function');
 var selector = require('blear.core.selector');
 var event = require('blear.core.event');
@@ -47,6 +48,8 @@ var MarkEditor = UI.extend({
         MarkEditor.parent(the);
         the[_initData]();
         the[_initEvent]();
+        // 初始历史记录点
+        the.setText(the[_textareaEl].value);
     },
 
     /**
@@ -54,7 +57,7 @@ var MarkEditor = UI.extend({
      * @param sel
      * @returns {{line: number, start: number, end: number, selStart: number, selEnd: number, text: string, inSel: boolean}[]}
      */
-    lines: function (sel) {
+    getLines: function (sel) {
         var the = this;
         var start = sel[0];
         var end = sel[1];
@@ -94,6 +97,48 @@ var MarkEditor = UI.extend({
     },
 
     /**
+     * 设置文本
+     * @param text {string} 值
+     * @param [sel] {(number)[]} 选区，默认末尾
+     * @returns {MarkEditor}
+     */
+    setText: function (text, sel) {
+        var the = this;
+        var length = text.length;
+        the[_textareaEl].value = text;
+        sel = sel || [length, length];
+        the.setSelection(sel);
+        the[_pushHistory]();
+        return the;
+    },
+
+    /**
+     * 获取文本
+     * @returns {string}
+     */
+    getText: function () {
+        return this[_textareaEl].value;
+    },
+
+    /**
+     * 聚焦
+     * @param [end=false] {boolean} 是否聚焦到末尾
+     * @returns {MarkEditor}
+     */
+    focus: function (end) {
+        var the = this;
+        var sel = the.getSelection();
+
+        if (end) {
+            var length = the[_textareaEl].value.length;
+            sel = [length, length];
+        }
+
+        the.setSelection(sel);
+        return the;
+    },
+
+    /**
      * 绑定热键
      * @param key {string} 键
      * @param callback {function} 回调
@@ -113,6 +158,35 @@ var MarkEditor = UI.extend({
     },
 
     /**
+     * 获取选区位置
+     * @returns {(number)[]}
+     */
+    getSelection: function () {
+        var the = this;
+        return textarea.getSelection(the[_textareaEl]);
+    },
+
+    /**
+     * 获取选区坐标
+     * @returns {({left: number, top: number})[]}
+     */
+    getSelectionRect: function () {
+        var the = this;
+        return textarea.getSelectionRect(the[_textareaEl]);
+    },
+
+    /**
+     * 设置选区位置
+     * @param sel
+     * @returns {MarkEditor}
+     */
+    setSelection: function (sel) {
+        var the = this;
+        textarea.setSelection(the[_textareaEl], sel);
+        return the;
+    },
+
+    /**
      * 增加缩进
      * @returns {MarkEditor}
      */
@@ -121,9 +195,9 @@ var MarkEditor = UI.extend({
         var options = the[_options];
         var tabSize = options.tabSize;
         var tab = string.repeat(' ', tabSize);
-        var sel = textarea.getSelection(the[_textareaEl]);
-        var lines = the.lines(sel);
-        var value = '';
+        var sel = the.getSelection();
+        var lines = the.getLines(sel);
+        var val = '';
         var selStart = -1;
         var selEnd = -1;
         var tabs = 0;
@@ -138,14 +212,12 @@ var MarkEditor = UI.extend({
 
                 tabs++;
                 selEnd = line.selEnd + tabSize * tabs;
-                value += tab + text1 + '\n';
+                val += tab + text1 + '\n';
             } else {
-                value += text1 + '\n';
+                val += text1 + '\n';
             }
         });
-        the[_textareaEl].value = value;
-        textarea.setSelection(the[_textareaEl], [selStart, selEnd]);
-        the[_pushHistory]();
+        the.setText(val, [selStart, selEnd]);
         return the;
     },
 
@@ -159,9 +231,9 @@ var MarkEditor = UI.extend({
         var tabSize = options.tabSize;
         var tab = string.repeat(' ', tabSize);
         var tabRE = new RegExp('^\\s{' + tabSize + '}');
-        var sel = textarea.getSelection(the[_textareaEl]);
-        var lines = the.lines(sel);
-        var value = '';
+        var sel = the.getSelection();
+        var lines = the.getLines(sel);
+        var val = '';
         var selStart = -1;
         var selEnd = -1;
         var tabs = 0;
@@ -176,13 +248,13 @@ var MarkEditor = UI.extend({
                 // 没有任何缩进了
 
                 if (text2 === text1) {
-                    value += text1 + '\n';
+                    val += text1 + '\n';
 
                     if (selStart === -1) {
                         selStart = selStart1;
                     }
                 } else {
-                    value += text2 + '\n';
+                    val += text2 + '\n';
                     tabs++;
 
                     if (selStart === -1) {
@@ -192,12 +264,32 @@ var MarkEditor = UI.extend({
 
                 selEnd = line.selEnd - tabSize * tabs;
             } else {
-                value += text1 + '\n';
+                val += text1 + '\n';
             }
         });
-        the[_textareaEl].value = value;
-        textarea.setSelection(the[_textareaEl], [selStart, selEnd]);
-        the[_pushHistory]();
+        the.setText(val, [selStart, selEnd]);
+        return the;
+    },
+
+    /**
+     * 撤销
+     * @returns {MarkEditor}
+     */
+    undo: function () {
+        var the = this;
+        var record = the[_history].back();
+        the.setText(record.val, record.sel);
+        return the;
+    },
+
+    /**
+     * 重做
+     * @returns {MarkEditor}
+     */
+    redo: function () {
+        var the = this;
+        var record = the[_history].forward();
+        the.setText(record.val, record.sel);
         return the;
     }
 });
@@ -237,13 +329,20 @@ proto[_initData] = function () {
 proto[_initEvent] = function () {
     var the = this;
     var ctrlKey = Hotkey.mac ? 'meta' : 'ctrl';
+    var shiftKey = 'shift';
+    var tabKey = 'tab';
+    var keys = function () {
+        return access.args(arguments).join('+');
+    };
 
     the[_hotkey] = new Hotkey({
         el: the[_textareaEl]
     });
     the[_history] = new History();
-    the.bind('tab', the.indent);
-    the.bind('shift+tab', the.outdent);
+    the.bind(keys(tabKey), the.indent);
+    the.bind(keys(shiftKey, tabKey), the.outdent);
+    the.bind(keys(ctrlKey, 'z'), the.undo);
+    the.bind(keys(ctrlKey, shiftKey, 'z'), the.redo);
     event.on(the[_textareaEl], 'input select', the[_onInput] = fun.throttle(function () {
         the[_pushHistory]();
     }));
@@ -257,6 +356,7 @@ proto[_pushHistory] = function () {
     var active = the[_history].active();
     var sel = textarea.getSelection(the[_textareaEl]);
     var val = the[_textareaEl].value;
+    var id = the[_options].id;
 
     // 两次记录完全一致，则不入栈
     if (
@@ -273,6 +373,7 @@ proto[_pushHistory] = function () {
         sel: sel,
         val: val
     });
+    setBackup(id, val, sel);
 };
 
 
@@ -299,12 +400,14 @@ function getBackup(id) {
 /**
  * 获取备份信息
  * @param id
- * @param value
+ * @param val
+ * @param sel
  * @returns {Object}
  */
-function setBackup(id, value) {
-    return storage.get(keyWrap(id), {
-        value: value,
+function setBackup(id, val, sel) {
+    return storage.set(keyWrap(id), {
+        val: val,
+        sel: sel,
         url: location.href,
         time: new Date()
     });

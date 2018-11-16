@@ -35,6 +35,17 @@
             margin-bottom: 10px;
         }
 
+        button {
+            font-size: 18px;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+
+        hr {
+            margin: 20px 0;
+        }
+
         textarea {
             width: 800px;
             height: 400px;
@@ -53,6 +64,11 @@
 <body ontouchstart="">
 
 <h1>example</h1>
+
+<button id="focus1">聚焦上次位置</button>
+<button id="focus2">聚焦到末尾</button>
+
+<hr>
 
 <textarea id="textarea" placeholder="markdown 纯文本编辑器"># 一级标题
 # 二级标题

@@ -13,6 +13,14 @@ var me = new MarkEditor({
     el: '#textarea'
 });
 
+document.getElementById('focus1').onclick = function () {
+    me.focus();
+};
+
+document.getElementById('focus2').onclick = function () {
+    me.focus(true);
+};
+
 
 window.me = me;
 
