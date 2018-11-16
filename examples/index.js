@@ -9,6 +9,8 @@
 
 var MarkEditor = require('../src/index');
 
+window.layout = require('blear.core.layout');
+
 var me = new MarkEditor({
     el: '#textarea'
 });

@@ -18,6 +18,8 @@ var event = require('blear.core.event');
 var storage = require('blear.core.storage')(localStorage);
 var History = require('blear.classes.history');
 var Hotkey = require('blear.classes.hotkey');
+var attribute = require('blear.core.attribute');
+var layout = require('blear.core.layout');
 
 var defaults = {
     /**
@@ -35,7 +37,12 @@ var defaults = {
      * 缩进长度
      * @type number
      */
-    tabSize: 4
+    tabSize: 4,
+
+    /**
+     * 最大高度
+     */
+    maxHeight: 400
 };
 var namspace = 'blear.ui.mark-editor';
 var MarkEditor = UI.extend({
@@ -43,10 +50,10 @@ var MarkEditor = UI.extend({
     constructor: function (options) {
         var the = this;
 
-        options = the[_options] = object.assign({}, defaults, options);
-        the[_textareaEl] = selector.query(options.el)[0];
+        the[_options] = object.assign({}, defaults, options);
         MarkEditor.parent(the);
         the[_initData]();
+        the[_initNode]();
         the[_initEvent]();
         // 初始历史记录点
         the.setText(the[_textareaEl].value);
@@ -434,10 +441,13 @@ var sole = MarkEditor.sole;
 var _options = sole();
 var _textareaEl = sole();
 var _initData = sole();
+var _initNode = sole();
 var _initEvent = sole();
+var _textareaAutoHeightExtra = sole();
 var _hotkey = sole();
 var _history = sole();
 var _onInput = sole();
+var _autoHeight = sole();
 var _pushHistory = sole();
 var _listenEnter = sole();
 var _detachLines = sole();
@@ -460,6 +470,19 @@ proto[_initData] = function () {
     var old = getBackup(id);
 
     the.emit('different', neo, old);
+};
+
+/**
+ * 初始化节点
+ */
+proto[_initNode] = function () {
+    var the = this;
+    the[_textareaEl] = selector.query(the[_options].el)[0];
+    var boxSizing = attribute.style(the[_textareaEl], 'box-sizing');
+    the[_textareaAutoHeightExtra] = boxSizing === 'border-box'
+        ? parseFloat(attribute.style(the[_textareaEl], 'border-top-width')) +
+        parseFloat(attribute.style(the[_textareaEl], 'border-bottom-width'))
+        : 0;
 };
 
 /**
@@ -499,9 +522,31 @@ proto[_initEvent] = function () {
     the.bind(keys(ctrlKey, '4'), heading(4));
     the.bind(keys(ctrlKey, '5'), heading(5));
     the.bind(keys(ctrlKey, '6'), heading(6));
+
     event.on(the[_textareaEl], 'input', the[_onInput] = fun.throttle(function () {
         the[_pushHistory]();
     }));
+};
+
+/**
+ * 自动高度
+ */
+proto[_autoHeight] = function () {
+    var the = this;
+    var maxHeight = the[_options].maxHeight;
+    var scrollTop = layout.scrollTop(document);
+    attribute.style(the[_textareaEl], 'height', '');
+    var autoHeight = layout.scrollHeight(the[_textareaEl]) + the[_textareaAutoHeightExtra];
+    var height = Math.min(autoHeight, maxHeight);
+
+    the.emit('autoHeight', height);
+    attribute.style(
+        the[_textareaEl],
+        'height',
+        height
+    );
+    // 恢复浏览器滚动条位置
+    layout.scrollTop(document, scrollTop);
 };
 
 /**
@@ -525,6 +570,7 @@ proto[_pushHistory] = function () {
         return;
     }
 
+    the[_autoHeight]();
     the[_history].push({
         sel: sel,
         val: val

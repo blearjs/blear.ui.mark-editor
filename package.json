@@ -32,7 +32,9 @@
   "dependencies": {
     "blear.classes.history": "^1.0.2",
     "blear.classes.hotkey": "^1.0.1",
+    "blear.core.attribute": "^1.0.14",
     "blear.core.event": "^1.1.5",
+    "blear.core.layout": "^1.0.7",
     "blear.core.selector": "^1.0.11",
     "blear.core.storage": "^1.1.3",
     "blear.ui": "^1.0.10",
