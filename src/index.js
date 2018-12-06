@@ -315,8 +315,9 @@ var MarkEditor = UI.extend({
      * 包裹
      * @param before {string} 开始字符
      * @param after {string} 结束字符
+     * @param [repeat=false] {boolean} 是否可以重复
      */
-    wrap: function (before, after) {
+    wrap: function (before, after, repeat) {
         var the = this;
         var text = the.getText();
         var sel = the.getSelection();
@@ -331,7 +332,7 @@ var MarkEditor = UI.extend({
         var focusAfter = text.slice(end, end + afterLength);
 
         // unwrap
-        if (focusBefore === before && focusAfter === after) {
+        if (!repeat && focusBefore === before && focusAfter === after) {
             the.setText(
                 begin.slice(0, -beforeLength) + focus + finish.slice(afterLength),
                 [
@@ -375,7 +376,7 @@ var MarkEditor = UI.extend({
      * @returns {MarkEditor}
      */
     lineCode: function () {
-        return this.wrap('`', '`');
+        return this.wrap('`', '`', true);
     },
 
     /**
@@ -511,7 +512,7 @@ proto[_initEvent] = function () {
     the.bind(keys(ctrlKey, 'b'), the.bold);
     the.bind(keys(ctrlKey, 'i'), the.italic);
     the.bind(keys(ctrlKey, 'u'), the.through);
-    the.bind(keys(ctrlKey, 'k'), the.lineCode);
+    the.bind(keys('`'), the.lineCode);
     the.bind(keys(ctrlKey, '0'), heading(0));
     the.bind(keys(ctrlKey, '1'), heading(1));
     the.bind(keys(ctrlKey, '2'), heading(2));
@@ -588,10 +589,10 @@ proto[_listenEnter] = function (ev) {
         var lines = the.getLines(true);
         var currLine = lines[0];
         var orderStartRE = /^(\s*)((?:[+*-]|\d+\.)\s)?/;
-        var preStartRE = /^`{3,}/;
+        // ```在中间回车```
+        var preStartRE = /^\s*`{6,}/;
         var currText = currLine.text;
         var orderIndentMatches = currText.match(orderStartRE);
-        var preMatches = currText.match(preStartRE);
 
         // 有列表或缩进符号
         if (orderIndentMatches) {
@@ -609,10 +610,10 @@ proto[_listenEnter] = function (ev) {
                 center += tab + order;
             }
         }
-        // 有块级代码
 
-        if (preMatches) {
-            after = '\n```\n' + after;
+        // 有块级代码
+        if (preStartRE.test(currText)) {
+            after = '\n' + after;
         }
     }
 
