@@ -7,6 +7,7 @@
 'use strict';
 
 var UI = require('blear.ui');
+var Textarea = require('blear.ui.textarea');
 var array = require('blear.utils.array');
 var object = require('blear.utils.object');
 var string = require('blear.utils.string');
@@ -432,8 +433,10 @@ var MarkEditor = UI.extend({
         var the = this;
 
         event.un(the[_textareaEl], 'input', the[_onInput]);
+        the[_textarea].destroy();
         the[_hotkey].destroy();
         the[_history].destroy();
+        the[_textarea] = the[_hotkey] = the[_history] = null;
     }
 });
 var proto = MarkEditor.prototype;
@@ -443,11 +446,10 @@ var _textareaEl = sole();
 var _initData = sole();
 var _initNode = sole();
 var _initEvent = sole();
-var _textareaAutoHeightExtra = sole();
+var _textarea = sole();
 var _hotkey = sole();
 var _history = sole();
 var _onInput = sole();
-var _autoHeight = sole();
 var _pushHistory = sole();
 var _listenEnter = sole();
 var _detachLines = sole();
@@ -478,11 +480,6 @@ proto[_initData] = function () {
 proto[_initNode] = function () {
     var the = this;
     the[_textareaEl] = selector.query(the[_options].el)[0];
-    var boxSizing = attribute.style(the[_textareaEl], 'box-sizing');
-    the[_textareaAutoHeightExtra] = boxSizing === 'border-box'
-        ? parseFloat(attribute.style(the[_textareaEl], 'border-top-width')) +
-        parseFloat(attribute.style(the[_textareaEl], 'border-bottom-width'))
-        : 0;
 };
 
 /**
@@ -526,27 +523,13 @@ proto[_initEvent] = function () {
     event.on(the[_textareaEl], 'input', the[_onInput] = fun.throttle(function () {
         the[_pushHistory]();
     }));
-};
-
-/**
- * 自动高度
- */
-proto[_autoHeight] = function () {
-    var the = this;
-    var maxHeight = the[_options].maxHeight;
-    var scrollTop = layout.scrollTop(document);
-    attribute.style(the[_textareaEl], 'height', '');
-    var autoHeight = layout.scrollHeight(the[_textareaEl]) + the[_textareaAutoHeightExtra];
-    var height = Math.min(autoHeight, maxHeight);
-
-    the.emit('autoHeight', height);
-    attribute.style(
-        the[_textareaEl],
-        'height',
-        height
-    );
-    // 恢复浏览器滚动条位置
-    layout.scrollTop(document, scrollTop);
+    the[_textarea] = new Textarea({
+        el: the[_textareaEl],
+        maxHeight: the[_options].maxHeight,
+        // 自行控制更新时机
+        keyEvent: null
+    });
+    the[_textarea].autoHeight();
 };
 
 /**
@@ -570,11 +553,11 @@ proto[_pushHistory] = function () {
         return;
     }
 
-    the[_autoHeight]();
     the[_history].push({
         sel: sel,
         val: val
     });
+    the[_textarea].updateHeight();
 
     if (id) {
         setBackup(id, val, sel);
