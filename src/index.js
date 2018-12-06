@@ -520,7 +520,7 @@ proto[_initEvent] = function () {
     the.bind(keys(ctrlKey, '5'), heading(5));
     the.bind(keys(ctrlKey, '6'), heading(6));
 
-    event.on(the[_textareaEl], 'input', the[_onInput] = fun.throttle(function () {
+    event.on(the[_textareaEl], 'input select', the[_onInput] = fun.throttle(function () {
         the[_pushHistory]();
     }));
     the[_textarea] = new Textarea({
@@ -557,7 +557,11 @@ proto[_pushHistory] = function () {
         sel: sel,
         val: val
     });
-    the[_textarea].updateHeight();
+
+    if (active && val !== active.val) {
+        the[_textarea].updateHeight();
+    }
+
 
     if (id) {
         setBackup(id, val, sel);
