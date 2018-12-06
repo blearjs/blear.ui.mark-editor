@@ -575,7 +575,10 @@ proto[_pushHistory] = function () {
         sel: sel,
         val: val
     });
-    setBackup(id, val, sel);
+
+    if (id) {
+        setBackup(id, val, sel);
+    }
 };
 
 /**
