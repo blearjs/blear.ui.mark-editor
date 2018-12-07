@@ -271,8 +271,8 @@ var MarkEditor = UI.extend({
         var the = this;
         var options = the[_options];
         var tabSize = options.tabSize;
-        // var tab = string.repeat(' ', tabSize);
-        var tabRE = new RegExp('^\\s{' + tabSize + '}');
+        // 1 - tabSize 个空格都可以
+        var tabRE = new RegExp('^\\s{1,' + tabSize + '}');
         var lines = the.getLines(true);
         var selStart = -1;
         var selEnd = -1;
@@ -712,32 +712,33 @@ proto[_listenEnter] = function (ev) {
     if (start === end) {
         var lines = the.getLines(true);
         var currLine = lines[0];
-        var orderStartRE = /^(\s*)((?:[+*->]|\d+\.)\s)?/;
+        var orderStartRE = /^(\s*)((?:[+*>-]|\d+\.)\s+)?/;
         // ```在中间回车```
-        var preStartRE = /^\s*`{6,}/;
+        var preStartRE = /^\s*(([+*>-]|\d+\.)\s+)?`{6,}/;
         var currText = currLine.text;
-        var orderIndentMatches = currText.match(orderStartRE);
-
-        // 有列表或缩进符号
-        if (orderIndentMatches) {
-            var tab = orderIndentMatches[1];
-            var order = orderIndentMatches[2] || '';
-
-            // 空白列表项，删除之
-            if (tab + order === currText) {
-                start -= currText.length;
-                before = before.slice(0, start);
-            } else {
-                order = order.replace(/^(\d+)\./, function (input, index) {
-                    return index * 1 + 1 + '.';
-                });
-                center += tab + order;
-            }
-        }
 
         // 有块级代码
         if (preStartRE.test(currText)) {
             after = '\n' + after;
+        } else {
+            var orderIndentMatches = currText.match(orderStartRE);
+
+            // 有列表或缩进符号
+            if (orderIndentMatches) {
+                var tab = orderIndentMatches[1];
+                var order = orderIndentMatches[2] || '';
+
+                // 空白列表项，删除之
+                if (tab + order === currText) {
+                    start -= currText.length;
+                    before = before.slice(0, start);
+                } else {
+                    order = order.replace(/^(\d+)\./, function (input, index) {
+                        return index * 1 + 1 + '.';
+                    });
+                    center += tab + order;
+                }
+            }
         }
     }
 
