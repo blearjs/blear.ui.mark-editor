@@ -47,23 +47,18 @@ var defaults = {
     maxHeight: 400,
 
     /**
-     * 全屏样式，仅 textarea 样式
-     * @type Object
+     * 添加的 className
      */
-    fullscreenStyle: {
-        top: 0,
-        left: 0,
-        width: 900,
-        height: '100%'
-    }
+    addClass: ''
 };
-var namspace = 'blear.ui.markEditor';
+var namspace = 'blearui-markEditor';
 var MarkEditor = UI.extend({
     className: 'MarkEditor',
     constructor: function (options) {
         var the = this;
 
         the[_options] = object.assign({}, defaults, options);
+        the[_fullscreen] = false;
         MarkEditor.parent(the);
         the[_initNode]();
         the[_initData]();
@@ -454,14 +449,34 @@ var MarkEditor = UI.extend({
             [
                 '| th1 | th2 |',
                 '| --- | --- |',
-                '| td1 | td2 |'
+                '| td1 | td2 |',
+                ''
             ].join('\n'),
             [2, 5]
         );
     },
 
+    /**
+     * 全屏
+     * @returns {MarkEditor}
+     */
     fullscreen: function () {
+        var the = this;
+        var fullscreenClassName = namspace + '_fullscreen';
 
+        if (the[_fullscreen]) {
+            attribute.removeClass(the[_editorEl], fullscreenClassName);
+            the[_textarea].autoHeight(true);
+        } else {
+            attribute.addClass(the[_editorEl], fullscreenClassName);
+            the[_textarea].autoHeight(false);
+            attribute.style(the[_textareaEl], {
+                height: '100%'
+            });
+        }
+
+        the[_fullscreen] = !the[_fullscreen];
+        return the;
     },
 
     /**
@@ -483,10 +498,13 @@ var MarkEditor = UI.extend({
 var proto = MarkEditor.prototype;
 var sole = MarkEditor.sole;
 var _options = sole();
-var _editorEl = sole();
 var _textareaEl = sole();
-var _containerEl = sole();
+var _editorEl = sole();
 var _placeholderEl = sole();
+var _bodyEl = sole();
+var _headerEl = sole();
+var _containerEl = sole();
+var _footerEl = sole();
 var _initData = sole();
 var _initNode = sole();
 var _initEvent = sole();
@@ -497,6 +515,7 @@ var _onInput = sole();
 var _pushHistory = sole();
 var _listenEnter = sole();
 var _detachLines = sole();
+var _fullscreen = sole();
 
 
 /**
@@ -509,7 +528,11 @@ proto[_initNode] = function () {
     modification.insert(the[_editorEl], the[_textareaEl], 3);
     var children = selector.children(the[_editorEl]);
     the[_placeholderEl] = children[0];
+    the[_bodyEl] = children[1];
+    children = selector.children(the[_bodyEl]);
+    the[_headerEl] = children[0];
     the[_containerEl] = children[1];
+    the[_footerEl] = children[2];
     modification.insert(the[_textareaEl], the[_containerEl]);
 };
 

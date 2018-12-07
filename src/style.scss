@@ -4,6 +4,7 @@
  * @create 2018-12-07 14:44:08
  * @update 2018-12-07 14:44:08
  */
+@import "../node_modules/blear.scss.flex/src/index";
 
 .blearui-markEditor {
   position: relative;
@@ -12,14 +13,51 @@
     display: none;
   }
 
+  &-body {
+    position: relative;
+  }
+
+  &-header {
+    display: none;
+  }
+
   &-container {
-    &_fullscreen {
-      position: fixed;
+    position: relative;
+  }
+
+  &-footer {
+    display: none;
+  }
+
+  &_fullscreen &-body {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: #efefef;
+    @include flex();
+    @include flex-direction(column);
+  }
+
+  &_fullscreen &-header,
+  &_fullscreen &-footer {
+    display: block;
+  }
+
+  &_fullscreen &-container {
+    @include flex-grow(1);
+    @include align-self(center);
+    width: 900px;
+
+    textarea {
+      position: absolute;
       top: 0;
-      right: 0;
-      bottom: 0;
       left: 0;
-      background: #fff;
+      width: 100%;
+      height: 100%;
+      margin: 0 auto;
+      resize: none;
     }
   }
 }
