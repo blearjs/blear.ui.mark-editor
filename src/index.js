@@ -276,32 +276,26 @@ var MarkEditor = UI.extend({
         var lines = the.getLines(true);
         var selStart = -1;
         var selEnd = -1;
-        var tabs = 0;
         var detaches = the[_detachLines](lines);
         var before = detaches[0];
         var after = detaches[1];
         var center = '';
+        var deltas = 0;
 
         array.each(lines, function (index, line) {
             var lineText1 = line.text;
             var lineText2 = lineText1.replace(tabRE, '');
             var lineSelStart = line.selStart;
+            var delta = lineText1.length - lineText2.length;
 
-            // 没有任何缩进了
-            if (lineText2 === lineText1) {
-                if (selStart === -1) {
-                    selStart = lineSelStart;
-                }
-            } else {
-                tabs++;
-
-                if (selStart === -1) {
-                    selStart = lineSelStart - tabSize;
-                }
+            if (selStart === -1) {
+                // 起点必须在当前行
+                selStart = Math.max(lineSelStart - delta, line.start);
             }
 
             center += lineText2 + '\n';
-            selEnd = line.selEnd - tabSize * tabs;
+            deltas += delta;
+            selEnd = line.selEnd - deltas;
         });
         the.setText(
             before + center + after,
