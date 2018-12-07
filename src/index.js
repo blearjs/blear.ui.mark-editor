@@ -14,6 +14,7 @@ var string = require('blear.utils.string');
 var textarea = require('blear.utils.textarea');
 var access = require('blear.utils.access');
 var fun = require('blear.utils.function');
+var time = require('blear.utils.time');
 var selector = require('blear.core.selector');
 var event = require('blear.core.event');
 var storage = require('blear.core.storage')(localStorage);
@@ -51,11 +52,10 @@ var MarkEditor = UI.extend({
 
         the[_options] = object.assign({}, defaults, options);
         MarkEditor.parent(the);
-        the[_initData]();
         the[_initNode]();
+        the[_initData]();
         the[_initEvent]();
-        // 初始历史记录点
-        the.setText(the[_textareaEl].value);
+        the[_pushHistory]();
     },
 
     /**
@@ -295,6 +295,7 @@ var MarkEditor = UI.extend({
         var the = this;
         var record = the[_history].back();
         the.setText(record.val, record.sel);
+        the[_textarea].updateHeight();
         return the;
     },
 
@@ -306,6 +307,7 @@ var MarkEditor = UI.extend({
         var the = this;
         var record = the[_history].forward();
         the.setText(record.val, record.sel);
+        the[_textarea].updateHeight();
         return the;
     },
 
@@ -415,6 +417,22 @@ var MarkEditor = UI.extend({
     },
 
     /**
+     * 插入链接
+     * @returns {MarkEditor}
+     */
+    link: function () {
+        return this.insert('[link](url)', [1, 5]);
+    },
+
+    /**
+     * 插入链接
+     * @returns {MarkEditor}
+     */
+    image: function () {
+        return this.insert('![image](url)', [9, 12]);
+    },
+
+    /**
      * 销毁实例
      */
     destroy: function () {
@@ -442,6 +460,15 @@ var _pushHistory = sole();
 var _listenEnter = sole();
 var _detachLines = sole();
 
+
+/**
+ * 初始化节点
+ */
+proto[_initNode] = function () {
+    var the = this;
+    the[_textareaEl] = selector.query(the[_options].el)[0];
+};
+
 /**
  * 初始化数据
  */
@@ -455,18 +482,20 @@ proto[_initData] = function () {
         return;
     }
 
-    var neo = the[_textareaEl].value;
-    var old = getBackup(id);
+    var val = the[_textareaEl].value;
+    var sel = the.getSelection();
+    var current = {
+        val: val,
+        sel: sel
+    };
+    var backup = getBackup(id);
 
-    the.emit('different', neo, old);
-};
-
-/**
- * 初始化节点
- */
-proto[_initNode] = function () {
-    var the = this;
-    the[_textareaEl] = selector.query(the[_options].el)[0];
+    if (backup && backup.val.length > 0 && backup.val !== current.val) {
+        // 异步发送
+        time.nextTick(function () {
+            the.emit('different', backup, current);
+        });
+    }
 };
 
 /**
@@ -507,7 +536,8 @@ proto[_initEvent] = function () {
     the.bind(keys(ctrlKey, '5'), heading(5));
     the.bind(keys(ctrlKey, '6'), heading(6));
     the.bind(keys(ctrlKey, 'l'), the.line);
-
+    the.bind(keys(ctrlKey, 'k'), the.link);
+    the.bind(keys(ctrlKey, 'g'), the.image);
     event.on(the[_textareaEl], 'input select', the[_onInput] = fun.throttle(function () {
         the[_pushHistory]();
     }));
@@ -550,9 +580,9 @@ proto[_pushHistory] = function () {
         the[_textarea].updateHeight();
     }
 
-
     if (id) {
         setBackup(id, val, sel);
+        the.emit('backup', val, sel);
     }
 };
 
