@@ -49,7 +49,23 @@ var defaults = {
     /**
      * 添加的 className
      */
-    addClass: ''
+    addClass: '',
+
+    /**
+     * 渲染头部（全屏下显示）
+     * @param headerEl
+     */
+    renderHeader: function (headerEl) {
+
+    },
+
+    /**
+     * 渲染底部（全屏下显示）
+     * @param footerEl
+     */
+    renderFooter: function (footerEl) {
+
+    }
 };
 var namspace = 'blearui-markEditor';
 var MarkEditor = UI.extend({
@@ -463,9 +479,14 @@ var MarkEditor = UI.extend({
     fullscreen: function () {
         var the = this;
         var fullscreenClassName = namspace + '_fullscreen';
+        var overflowClassName = namspace + '-overflow';
+        var htmlEl = document.documentElement;
+        var bodyEl = document.body;
 
         if (the[_fullscreen]) {
             attribute.removeClass(the[_editorEl], fullscreenClassName);
+            attribute.removeClass(htmlEl, overflowClassName);
+            attribute.removeClass(bodyEl, overflowClassName);
             the[_textarea].autoHeight(true);
         } else {
             attribute.addClass(the[_editorEl], fullscreenClassName);
@@ -473,6 +494,8 @@ var MarkEditor = UI.extend({
             attribute.style(the[_textareaEl], {
                 height: '100%'
             });
+            attribute.addClass(htmlEl, overflowClassName);
+            attribute.addClass(bodyEl, overflowClassName);
         }
 
         the[_fullscreen] = !the[_fullscreen];
@@ -523,17 +546,25 @@ var _fullscreen = sole();
  */
 proto[_initNode] = function () {
     var the = this;
+    var options = the[_options];
+
     the[_editorEl] = modification.parse(require('./template.html'));
     the[_textareaEl] = selector.query(the[_options].el)[0];
     modification.insert(the[_editorEl], the[_textareaEl], 3);
+
     var children = selector.children(the[_editorEl]);
     the[_placeholderEl] = children[0];
     the[_bodyEl] = children[1];
+
     children = selector.children(the[_bodyEl]);
     the[_headerEl] = children[0];
     the[_containerEl] = children[1];
     the[_footerEl] = children[2];
     modification.insert(the[_textareaEl], the[_containerEl]);
+
+    attribute.addClass(the[_editorEl], options.addClass);
+    options.renderHeader.call(the, the[_headerEl]);
+    options.renderFooter.call(the, the[_footerEl]);
 };
 
 /**
@@ -650,6 +681,7 @@ proto[_pushHistory] = function () {
         sel: sel,
         val: val
     });
+    the.emit('change', val, sel);
 
     if (active && val !== active.val) {
         the[_textarea].updateHeight();

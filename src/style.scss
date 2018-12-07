@@ -9,6 +9,10 @@
 .blearui-markEditor {
   position: relative;
 
+  &-overflow {
+    overflow: hidden;
+  }
+
   &-placeholder {
     display: none;
   }

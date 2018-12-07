@@ -8,10 +8,19 @@
 'use strict';
 
 var MarkEditor = require('../src/index');
+var wordsEl = null;
 
 var me = new MarkEditor({
     el: '#textarea',
-    id: 'demo'
+    id: 'demo',
+    addClass: 'demo',
+    renderHeader: function (hedaerEl) {
+        hedaerEl.innerHTML = require('./header.html');
+    },
+    renderFooter: function (footerEl) {
+        footerEl.innerHTML = require('./footer.html');
+        wordsEl = footerEl.getElementsByClassName('footer-words')[0];
+    }
 });
 
 document.getElementById('focus1').onclick = function () {
@@ -31,5 +40,8 @@ me.on('different', function (backup, current) {
     }
 });
 
-window.me = me;
+me.on('change', function (val, sel) {
+    wordsEl.innerHTML = val.length;
+});
+
 

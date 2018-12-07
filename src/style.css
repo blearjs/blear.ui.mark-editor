@@ -6,6 +6,8 @@
  */
 .blearui-markEditor {
   position: relative; }
+  .blearui-markEditor-overflow {
+    overflow: hidden; }
   .blearui-markEditor-placeholder {
     display: none; }
   .blearui-markEditor-body {
