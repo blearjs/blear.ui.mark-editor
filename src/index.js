@@ -19,8 +19,6 @@ var event = require('blear.core.event');
 var storage = require('blear.core.storage')(localStorage);
 var History = require('blear.classes.history');
 var Hotkey = require('blear.classes.hotkey');
-var attribute = require('blear.core.attribute');
-var layout = require('blear.core.layout');
 
 var defaults = {
     /**
@@ -312,46 +310,27 @@ var MarkEditor = UI.extend({
     },
 
     /**
+     * 插入文本
+     * @param txt {String} 待插入的文本
+     * @param [mode=2] {Number} 插入模式，0=定位到文本开始，1=选中文本，2=定位到文本结尾
+     * @returns {MarkEditor}
+     */
+    insert: function (txt, mode) {
+        var the = this;
+        textarea.insert(the[_textareaEl], txt, mode);
+        return the;
+    },
+
+    /**
      * 包裹
      * @param before {string} 开始字符
      * @param after {string} 结束字符
-     * @param [repeat=false] {boolean} 是否可以重复
+     * @param [mode=0] {Number} 模式，0=切换模式，1=重复模式
+     * @returns {MarkEditor}
      */
-    wrap: function (before, after, repeat) {
+    wrap: function (before, after, mode) {
         var the = this;
-        var text = the.getText();
-        var sel = the.getSelection();
-        var start = sel[0];
-        var end = sel[1];
-        var begin = text.slice(0, start);
-        var finish = text.slice(end);
-        var focus = text.slice(start, end);
-        var beforeLength = before.length;
-        var afterLength = after.length;
-        var focusBefore = text.slice(start - beforeLength, start);
-        var focusAfter = text.slice(end, end + afterLength);
-
-        // unwrap
-        if (!repeat && focusBefore === before && focusAfter === after) {
-            the.setText(
-                begin.slice(0, -beforeLength) + focus + finish.slice(afterLength),
-                [
-                    start - beforeLength,
-                    end - beforeLength
-                ]
-            );
-        }
-        // wrap
-        else {
-            the.setText(
-                begin + before + focus + after + finish,
-                [
-                    start + beforeLength,
-                    end + beforeLength
-                ]
-            );
-        }
-
+        textarea.wrap(the[_textareaEl], before, after, mode);
         return the;
     },
 
@@ -375,8 +354,8 @@ var MarkEditor = UI.extend({
      * 行内代码
      * @returns {MarkEditor}
      */
-    lineCode: function () {
-        return this.wrap('`', '`', true);
+    code: function () {
+        return this.wrap('`', '`', 1);
     },
 
     /**
@@ -428,6 +407,14 @@ var MarkEditor = UI.extend({
     },
 
     /**
+     * 插入横线
+     * @returns {MarkEditor}
+     */
+    line: function () {
+        return this.insert('\n\n------\n\n', 2);
+    },
+
+    /**
      * 销毁实例
      */
     destroy: function () {
@@ -454,7 +441,6 @@ var _onInput = sole();
 var _pushHistory = sole();
 var _listenEnter = sole();
 var _detachLines = sole();
-
 
 /**
  * 初始化数据
@@ -512,7 +498,7 @@ proto[_initEvent] = function () {
     the.bind(keys(ctrlKey, 'b'), the.bold);
     the.bind(keys(ctrlKey, 'i'), the.italic);
     the.bind(keys(ctrlKey, 'u'), the.through);
-    the.bind(keys('`'), the.lineCode);
+    the.bind(keys('`'), the.code);
     the.bind(keys(ctrlKey, '0'), heading(0));
     the.bind(keys(ctrlKey, '1'), heading(1));
     the.bind(keys(ctrlKey, '2'), heading(2));
@@ -520,6 +506,7 @@ proto[_initEvent] = function () {
     the.bind(keys(ctrlKey, '4'), heading(4));
     the.bind(keys(ctrlKey, '5'), heading(5));
     the.bind(keys(ctrlKey, '6'), heading(6));
+    the.bind(keys(ctrlKey, 'l'), the.line);
 
     event.on(the[_textareaEl], 'input select', the[_onInput] = fun.throttle(function () {
         the[_pushHistory]();
@@ -539,7 +526,7 @@ proto[_initEvent] = function () {
 proto[_pushHistory] = function () {
     var the = this;
     var active = the[_history].active();
-    var sel = textarea.getSelection(the[_textareaEl]);
+    var sel = the.getSelection();
     var val = the[_textareaEl].value;
     var id = the[_options].id;
 
