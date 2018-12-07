@@ -16,6 +16,8 @@ var access = require('blear.utils.access');
 var fun = require('blear.utils.function');
 var time = require('blear.utils.time');
 var selector = require('blear.core.selector');
+var attribute = require('blear.core.attribute');
+var modification = require('blear.core.modification');
 var event = require('blear.core.event');
 var storage = require('blear.core.storage')(localStorage);
 var History = require('blear.classes.history');
@@ -42,9 +44,20 @@ var defaults = {
     /**
      * 最大高度
      */
-    maxHeight: 400
+    maxHeight: 400,
+
+    /**
+     * 全屏样式，仅 textarea 样式
+     * @type Object
+     */
+    fullscreenStyle: {
+        top: 0,
+        left: 0,
+        width: 900,
+        height: '100%'
+    }
 };
-var namspace = 'blear.ui.mark-editor';
+var namspace = 'blear.ui.markEditor';
 var MarkEditor = UI.extend({
     className: 'MarkEditor',
     constructor: function (options) {
@@ -433,6 +446,25 @@ var MarkEditor = UI.extend({
     },
 
     /**
+     * 插入表格
+     * @returns {MarkEditor}
+     */
+    table: function () {
+        return this.insert(
+            [
+                '| th1 | th2 |',
+                '| --- | --- |',
+                '| td1 | td2 |'
+            ].join('\n'),
+            [2, 5]
+        );
+    },
+
+    fullscreen: function () {
+
+    },
+
+    /**
      * 销毁实例
      */
     destroy: function () {
@@ -443,12 +475,18 @@ var MarkEditor = UI.extend({
         the[_hotkey].destroy();
         the[_history].destroy();
         the[_textarea] = the[_hotkey] = the[_history] = null;
+        modification.insert(the[_textareaEl], the[_placeholderEl], 3);
+        modification.remove(the[_placeholderEl]);
+        modification.remove(the[_containerEl]);
     }
 });
 var proto = MarkEditor.prototype;
 var sole = MarkEditor.sole;
 var _options = sole();
+var _editorEl = sole();
 var _textareaEl = sole();
+var _containerEl = sole();
+var _placeholderEl = sole();
 var _initData = sole();
 var _initNode = sole();
 var _initEvent = sole();
@@ -466,7 +504,13 @@ var _detachLines = sole();
  */
 proto[_initNode] = function () {
     var the = this;
+    the[_editorEl] = modification.parse(require('./template.html'));
     the[_textareaEl] = selector.query(the[_options].el)[0];
+    modification.insert(the[_editorEl], the[_textareaEl], 3);
+    var children = selector.children(the[_editorEl]);
+    the[_placeholderEl] = children[0];
+    the[_containerEl] = children[1];
+    modification.insert(the[_textareaEl], the[_containerEl]);
 };
 
 /**
@@ -505,6 +549,7 @@ proto[_initEvent] = function () {
     var the = this;
     var ctrlKey = Hotkey.mac ? 'cmd' : 'ctrl';
     var shiftKey = 'shift';
+    var altKey = 'alt';
     var tabKey = 'tab';
     var keys = function () {
         return access.args(arguments).join('+');
@@ -538,6 +583,8 @@ proto[_initEvent] = function () {
     the.bind(keys(ctrlKey, 'l'), the.line);
     the.bind(keys(ctrlKey, 'k'), the.link);
     the.bind(keys(ctrlKey, 'g'), the.image);
+    the.bind(keys(ctrlKey, altKey, 't'), the.table);
+    the.bind(keys(ctrlKey, 'enter'), the.fullscreen);
     event.on(the[_textareaEl], 'input select', the[_onInput] = fun.throttle(function () {
         the[_pushHistory]();
     }));
@@ -547,7 +594,12 @@ proto[_initEvent] = function () {
         // 自行控制更新时机
         keyEvent: null
     });
-    the[_textarea].autoHeight();
+    time.nextTick(function () {
+        the[_textarea].autoHeight();
+    });
+    the[_textarea].on('updateHeight', function (height) {
+        attribute.style(the[_placeholderEl], 'height', height);
+    });
 };
 
 /**
@@ -605,7 +657,7 @@ proto[_listenEnter] = function (ev) {
     if (start === end) {
         var lines = the.getLines(true);
         var currLine = lines[0];
-        var orderStartRE = /^(\s*)((?:[+*-]|\d+\.)\s)?/;
+        var orderStartRE = /^(\s*)((?:[+*->]|\d+\.)\s)?/;
         // ```在中间回车```
         var preStartRE = /^\s*`{6,}/;
         var currText = currLine.text;
@@ -660,6 +712,7 @@ proto[_detachLines] = function (lines) {
 };
 
 
+require('./style.css', 'css|style');
 MarkEditor.defaults = defaults;
 module.exports = MarkEditor;
 

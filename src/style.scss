@@ -1,0 +1,26 @@
+/**
+ * style
+ * @author ydr.me
+ * @create 2018-12-07 14:44:08
+ * @update 2018-12-07 14:44:08
+ */
+
+.blearui-markEditor {
+  position: relative;
+
+  &-placeholder {
+    display: none;
+  }
+
+  &-container {
+    &_fullscreen {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background: #fff;
+    }
+  }
+}
+ 
