@@ -745,6 +745,12 @@ proto[_listenEnter] = function (ev) {
         before + center + after,
         [start + delta, start + delta]
     );
+
+    // 在末尾回车，自动将编辑器滚动到末尾
+    // @todo 判断光标是否在编辑器的可视区域内
+    if (after === '') {
+        the[_textareaEl].scrollTop = the[_textareaEl].scrollHeight;
+    }
 };
 
 /**

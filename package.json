@@ -39,7 +39,7 @@
     "blear.core.storage": "^1.1.3",
     "blear.scss.flex": "^1.0.1",
     "blear.ui": "^1.0.10",
-    "blear.ui.textarea": "^1.0.2",
+    "blear.ui.textarea": "^1.0.3",
     "blear.utils.access": "^1.0.5",
     "blear.utils.array": "^1.0.12",
     "blear.utils.function": "^1.0.5",
