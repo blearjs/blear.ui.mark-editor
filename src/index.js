@@ -708,7 +708,8 @@ proto[_listenEnter] = function (ev) {
         var currLine = lines[0];
         var orderStartRE = /^(\s*)((?:[+*>-]|\d+\.)\s+)?/;
         // ```在中间回车```
-        var preStartRE = /^\s*(([+*>-]|\d+\.)\s+)?`{6,}/;
+        // ```lang在中间回车```
+        var preStartRE = /^\s*(([+*>-]|\d+\.)\s+)?`{3,}(.+)?`{3,}/;
         var currText = currLine.text;
 
         // 有块级代码
@@ -792,6 +793,7 @@ function getBackup(id) {
  */
 function setBackup(id, val, sel) {
     return storage.set(keyWrap(id), {
+        id: keyWrap(id),
         val: val,
         sel: sel,
         url: location.href,
