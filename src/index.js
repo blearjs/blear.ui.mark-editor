@@ -467,7 +467,7 @@ var MarkEditor = UI.extend({
     },
 
     /**
-     * 全屏
+     * 切换全屏
      * @returns {MarkEditor}
      */
     fullscreen: function () {
@@ -765,6 +765,7 @@ proto[_detachLines] = function (lines) {
 
 require('./style.css', 'css|style');
 MarkEditor.defaults = defaults;
+MarkEditor.Hotkey = Hotkey;
 module.exports = MarkEditor;
 
 // =================================================================
