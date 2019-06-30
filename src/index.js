@@ -483,6 +483,7 @@ var MarkEditor = UI.extend({
             attribute.removeClass(bodyEl, overflowClassName);
             the[_textarea].autoHeight(true);
             attribute.style(the[_bodyEl], 'zIndex', '');
+            the.emit('exitFulllscreen');
         } else {
             attribute.addClass(the[_editorEl], fullscreenClassName);
             the[_textarea].autoHeight(false);
@@ -492,6 +493,7 @@ var MarkEditor = UI.extend({
             attribute.addClass(htmlEl, overflowClassName);
             attribute.addClass(bodyEl, overflowClassName);
             attribute.style(the[_bodyEl], 'zIndex', UI.zIndex());
+            the.emit('enterFulllscreen');
         }
 
         the[_fullscreen] = !the[_fullscreen];
