@@ -490,7 +490,7 @@ var MarkEditor = UI.extend({
             });
             attribute.addClass(htmlEl, overflowClassName);
             attribute.addClass(bodyEl, overflowClassName);
-            attribute.style(bodyEl, 'zIndex', UI.zIndex());
+            attribute.style(the[_bodyEl], 'zIndex', UI.zIndex());
         }
 
         the[_fullscreen] = !the[_fullscreen];
