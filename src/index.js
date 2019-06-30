@@ -501,8 +501,16 @@ var MarkEditor = UI.extend({
     },
 
     /**
+     * 判断当前是否为全屏状态
+     * @returns {Boolean}
+     */
+    isFullscreen: function () {
+        return this[_fullscreen];
+    },
+
+    /**
      * 获取头部元素
-     * @returns {*}
+     * @returns {HTMLDivElement}
      */
     getHeaderEl: function () {
         return this[_headerEl];
@@ -510,7 +518,7 @@ var MarkEditor = UI.extend({
 
     /**
      * 获取容器元素
-     * @returns {*}
+     * @returns {HTMLDivElement}
      */
     getContainerEl: function () {
         return this[_containerEl];
@@ -518,7 +526,7 @@ var MarkEditor = UI.extend({
 
     /**
      * 获取底部元素
-     * @returns {*}
+     * @returns {HTMLDivElement}
      */
     getFooterEl: function () {
         return this[_footerEl];
