@@ -501,6 +501,30 @@ var MarkEditor = UI.extend({
     },
 
     /**
+     * 获取头部元素
+     * @returns {*}
+     */
+    getHeaderEl: function () {
+        return this[_headerEl];
+    },
+
+    /**
+     * 获取容器元素
+     * @returns {*}
+     */
+    getContainerEl: function () {
+        return this[_containerEl];
+    },
+
+    /**
+     * 获取底部元素
+     * @returns {*}
+     */
+    getFooterEl: function () {
+        return this[_footerEl];
+    },
+
+    /**
      * 销毁实例
      */
     destroy: function () {
