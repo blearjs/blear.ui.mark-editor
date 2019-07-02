@@ -145,6 +145,8 @@ var MarkEditor = UI.extend({
         sel = sel || [length, length];
         the.setSelection(sel);
         the[_pushHistory]();
+        event.emit(the[_textareaEl], 'input');
+        event.emit(the[_textareaEl], 'change');
         return the;
     },
 
