@@ -1,6 +1,6 @@
 {
   "name": "blear.ui.mark-editor",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "markdown 纯文本编辑器",
   "scripts": {},
   "preferGlobal": false,
