@@ -51,8 +51,8 @@ me.on('mentionStart', function (pos) {
     console.log('mentionStart', pos);
 });
 
-me.on('mentionPress', function (mentioned, pos) {
-    console.log('mentionPress', mentioned, pos);
+me.on('mentionMatch', function (mentioned, pos) {
+    console.log('mentionMatch', mentioned || '<空>', pos);
 });
 
 me.on('mentionEnd', function (pos) {

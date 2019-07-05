@@ -99,7 +99,6 @@ var MarkEditor = UI.extend({
         the[_fullscreen] = false;
         the[_hotkeyCtrled] = true;
         the[_mentionStarted] = false;
-        the[_mentionPressed] = false;
         the[_mentionPos0] = 0;
         the[_mentionPos1] = 0;
         MarkEditor.parent(the);
@@ -254,7 +253,6 @@ var MarkEditor = UI.extend({
         }
 
         the[_mentionStarted] = false;
-        the[_mentionPressed] = false;
         nextTick(function () {
             the.ctrlHotkey(true);
             the.emit('mentionEnd', [the[_mentionPos0], the[_mentionPos1]]);
@@ -650,7 +648,6 @@ var _fullscreen = sole();
 var _parsePasteImage = sole();
 var _hotkeyCtrled = sole();
 var _mentionStarted = sole();
-var _mentionPressed = sole();
 var _mentionPos0 = sole();
 var _mentionPos1 = sole();
 
@@ -793,13 +790,8 @@ proto[_initMention] = function () {
             the.emit('mentionStart', [the[_mentionPos0], the[_mentionPos1]]);
         }
     };
-    var mentionPress = the[_onMentionPress] = function (ev) {
+    var mentionMatch = the[_onMentionPress] = function (ev) {
         if (!the[_mentionStarted]) {
-            return;
-        }
-
-        if (!the[_mentionPressed]) {
-            the[_mentionPressed] = true;
             return;
         }
 
@@ -808,20 +800,20 @@ proto[_initMention] = function () {
         the[_mentionPos1] = line.selStart;
 
         // 倒删除
-        if (the[_mentionPos0] >= the[_mentionPos1]) {
+        if (the[_mentionPos0] > the[_mentionPos1]) {
             mentionEnd();
             return;
         }
 
-        var mentioned = text.slice(the[_mentionPos0], the[_mentionPos1]);
-        the.emit('mentionPress', mentioned, [the[_mentionPos0], the[_mentionPos1]]);
+        var keywords = text.slice(the[_mentionPos0], the[_mentionPos1]);
+        the.emit('mentionMatch', keywords, [the[_mentionPos0], the[_mentionPos1]]);
     };
     var mentionEnd = function () {
         the.mentionEnd();
     };
 
     the[_hotkey].bind(shiftKey + '+2', mentionStart);
-    event.on(the[_textareaEl], inputEventType, mentionPress);
+    event.on(the[_textareaEl], inputEventType, mentionMatch);
     the[_hotkey].bind('space', mentionEnd);
     the[_hotkey].bind('esc', mentionEnd);
     the[_hotkey].bind('enter', mentionEnd);
