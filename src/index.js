@@ -371,13 +371,14 @@ var MarkEditor = UI.extend({
 
     /**
      * 插入文本
-     * @param txt {String} 待插入的文本
-     * @param [mode=2] {Number} 插入模式，0=定位到文本开始，1=选中文本，2=定位到文本结尾
+     * @param text {String} 待插入的文本
+     * @param [mode=2] {Number|Array} 插入模式，0=定位到文本开始，1=选中文本，2=定位到文本结尾，如果是数组则作为相对选区
      * @returns {MarkEditor}
      */
-    insert: function (txt, mode) {
+    insert: function (text, mode) {
         var the = this;
-        textarea.insert(the[_textareaEl], txt, mode);
+        textarea.insert(the[_textareaEl], text, mode);
+        the[_pushHistory]();
         return the;
     },
 
@@ -746,7 +747,8 @@ proto[_initMention] = function () {
     var options = the[_options];
     var mentionStarted = false;
     var mentionPressed = false;
-    var mentionPos = 0;
+    var mentionPos0 = 0;
+    var mentionPos1 = 0;
     // @
     var mentionStart = function (ev, keys) {
         if (mentionStarted) {
@@ -762,9 +764,9 @@ proto[_initMention] = function () {
 
         if (!text || /[\s\n]/.test(atLeftChar)) {
             mentionStarted = true;
-            mentionPos = selStart;
+            mentionPos0 = selStart + 1;
             the.ctrlHotkey(false);
-            the.emit('mentionStart');
+            the.emit('mentionStart', [mentionPos0, mentionPos0]);
         }
     };
     var mentionPress = the[_onMentionPress] = function (ev) {
@@ -779,16 +781,16 @@ proto[_initMention] = function () {
 
         var line = the.getLines(true)[0];
         var text = the.getText();
-        var selEnd = line.selStart;
+        mentionPos1 = line.selStart;
 
-        if (mentionPos >= selEnd) {
+        // 倒删除
+        if (mentionPos0 >= mentionPos1) {
             mentionEnd();
             return;
         }
 
-        var mentioned = text.slice(mentionPos + 1, selEnd);
-
-        the.emit('mentionPress', mentioned);
+        var mentioned = text.slice(mentionPos0, mentionPos1);
+        the.emit('mentionPress', mentioned, [mentionPos0, mentionPos1]);
     };
     var mentionEnd = function () {
         if (!mentionStarted) {
@@ -798,7 +800,7 @@ proto[_initMention] = function () {
         mentionStarted = false;
         mentionPressed = false;
         the.ctrlHotkey(true);
-        the.emit('mentionEnd');
+        the.emit('mentionEnd', [mentionPos0, mentionPos1]);
     };
 
     the[_hotkey].bind(shiftKey + '+2', mentionStart);

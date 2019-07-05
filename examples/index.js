@@ -47,15 +47,15 @@ me.on('change', function (val, sel) {
     wordsEl.innerHTML = val.length;
 });
 
-me.on('mentionStart', function () {
-    console.log('mentionStart');
+me.on('mentionStart', function (pos) {
+    console.log('mentionStart', pos);
 });
 
-me.on('mentionPress', function (person) {
-    console.log('mentionPress', person);
+me.on('mentionPress', function (mentioned, pos) {
+    console.log('mentionPress', mentioned, pos);
 });
 
-me.on('mentionEnd', function () {
-    console.log('mentionEnd');
+me.on('mentionEnd', function (pos) {
+    console.log('mentionEnd', pos);
 });
 
