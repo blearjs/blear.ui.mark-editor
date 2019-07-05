@@ -65,6 +65,16 @@ var defaults = {
      */
     renderFooter: function (footerEl) {
 
+    },
+
+    /**
+     * 粘贴图片时
+     * @param image
+     * @param done
+     */
+    onPasteImage: function (image, done) {
+        // done(null, url);
+        done(new Error('未配置粘贴图片上传函数'));
     }
 };
 var namspace = 'blearui-markEditor';
@@ -440,16 +450,22 @@ var MarkEditor = UI.extend({
      * 插入链接
      * @returns {MarkEditor}
      */
-    link: function () {
-        return this.insert('[link](url)', [1, 5]);
+    link: function (text, url) {
+        var start = 1;
+        var end = text.length + start;
+        return this.insert('[' + text + '](' + url + ')', [start, end]);
     },
 
     /**
-     * 插入链接
+     * 插入图片
+     * @param alt
+     * @param url
      * @returns {MarkEditor}
      */
-    image: function () {
-        return this.insert('![image](url)', [9, 12]);
+    image: function (alt, url) {
+        var start = 2;
+        var end = start + alt.length;
+        return this.insert('![' + alt + '](' + url + ')', [start, end]);
     },
 
     /**
@@ -567,10 +583,12 @@ var _textarea = sole();
 var _hotkey = sole();
 var _history = sole();
 var _onInput = sole();
+var _onPaste = sole();
 var _pushHistory = sole();
 var _listenEnter = sole();
 var _detachLines = sole();
 var _fullscreen = sole();
+var _parsePasteImage = sole();
 
 
 /**
@@ -667,13 +685,18 @@ proto[_initEvent] = function () {
     the.bind(keys(ctrlKey, '5'), heading(5));
     the.bind(keys(ctrlKey, '6'), heading(6));
     the.bind(keys(ctrlKey, 'l'), the.line);
-    the.bind(keys(ctrlKey, 'k'), the.link);
-    the.bind(keys(ctrlKey, 'g'), the.image);
+    the.bind(keys(ctrlKey, 'k'), function () {
+        the.link('text', 'url');
+    });
+    the.bind(keys(ctrlKey, 'g'), function () {
+        the.image('alt', 'url');
+    });
     the.bind(keys(ctrlKey, altKey, 't'), the.table);
     the.bind(keys(ctrlKey, 'enter'), the.fullscreen);
     event.on(the[_textareaEl], 'input select', the[_onInput] = fun.throttle(function () {
         the[_pushHistory]();
     }));
+    event.on(the[_textareaEl], 'paste drop', the[_onPaste] = fun.bind(the[_parsePasteImage], the));
     the[_textarea] = new Textarea({
         el: the[_textareaEl],
         maxHeight: the[_options].maxHeight,
@@ -806,6 +829,50 @@ proto[_detachLines] = function (lines) {
     return [before, after];
 };
 
+proto[_parsePasteImage] = function (ev) {
+    var the = this;
+    var options = the[_options];
+    var clipboardData = ev.clipboardData;
+    var dataTransfer = ev.dataTransfer;
+    var files = null;
+
+    if (clipboardData && clipboardData.files) {
+        files = clipboardData.files;
+    }
+
+    if (dataTransfer && dataTransfer.files) {
+        files = dataTransfer.files;
+    }
+
+    if (!files) {
+        return false;
+    }
+
+    var image = null;
+
+    array.each(files, function (index, file) {
+        if (/^image\//.test(file.type)) {
+            image = file;
+            return false;
+        }
+    });
+
+    if (!image) {
+        return false;
+    }
+
+    the.emit('pasteImage', image);
+    options.onPasteImage.call(the, image, function (err, url) {
+        if (err) {
+            the.emit('error', err);
+            return;
+        }
+
+        the.image('粘贴图片', url);
+    });
+
+    return false;
+};
 
 require('./style.css', 'css|style');
 MarkEditor.defaults = defaults;

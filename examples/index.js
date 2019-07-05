@@ -20,6 +20,9 @@ var me = new MarkEditor({
     renderFooter: function (footerEl) {
         footerEl.innerHTML = require('./footer.html');
         wordsEl = footerEl.getElementsByClassName('footer-words')[0];
+    },
+    onPasteImage: function (image, done) {
+        done(null, 'https://example.com/image.png');
     }
 });
 
