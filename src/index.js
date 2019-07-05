@@ -75,9 +75,20 @@ var defaults = {
     onPasteImage: function (image, done) {
         // done(null, url);
         done(new Error('未配置粘贴图片上传函数'));
+    },
+
+    onMention: function () {
+        // return false 表示禁止默认行为
     }
 };
 var namspace = 'blearui-markEditor';
+var inputEventType = 'input';
+var inputSelectEventType = inputEventType + ' select';
+var pastDropEventType = 'paste drop';
+var ctrlKey = Hotkey.mac ? 'cmd' : 'ctrl';
+var shiftKey = 'shift';
+var altKey = 'alt';
+var tabKey = 'tab';
 var MarkEditor = UI.extend({
     className: 'MarkEditor',
     constructor: function (options) {
@@ -85,10 +96,12 @@ var MarkEditor = UI.extend({
 
         the[_options] = object.assign({}, defaults, options);
         the[_fullscreen] = false;
+        the[_hotkeyCtrled] = true;
         MarkEditor.parent(the);
         the[_initNode]();
         the[_initData]();
         the[_initEvent]();
+        the[_initMention]();
         the[_pushHistory]();
     },
 
@@ -196,8 +209,12 @@ var MarkEditor = UI.extend({
     bind: function (key, callback, preventDefault) {
         var the = this;
 
-        // 增加缩进
+        // 绑定热键
         the[_hotkey].bind(key, function (ev, keys) {
+            if (!the[_hotkeyCtrled]) {
+                return;
+            }
+
             if (preventDefault !== false) {
                 ev.preventDefault();
             }
@@ -206,6 +223,17 @@ var MarkEditor = UI.extend({
             the[_pushHistory]();
         });
 
+        return the;
+    },
+
+    /**
+     * 控制热键，可以将热键控制权移交出去
+     * @param boolean
+     * @returns {MarkEditor}
+     */
+    ctrlHotkey: function (boolean) {
+        var the = this;
+        the[_hotkeyCtrled] = boolean;
         return the;
     },
 
@@ -556,7 +584,8 @@ var MarkEditor = UI.extend({
     destroy: function () {
         var the = this;
 
-        event.un(the[_textareaEl], 'input', the[_onInput]);
+        event.un(the[_textareaEl], inputSelectEventType, the[_onInput]);
+        event.un(the[_textareaEl], inputEventType, the[_onMentionPress]);
         the[_textarea].destroy();
         the[_hotkey].destroy();
         the[_history].destroy();
@@ -579,16 +608,21 @@ var _footerEl = sole();
 var _initData = sole();
 var _initNode = sole();
 var _initEvent = sole();
+var _initMention = sole();
 var _textarea = sole();
 var _hotkey = sole();
 var _history = sole();
 var _onInput = sole();
 var _onPaste = sole();
+var _onMentionStart = sole();
+var _onMentionPress = sole();
+var _onMentionEnd = sole();
 var _pushHistory = sole();
 var _listenEnter = sole();
 var _detachLines = sole();
 var _fullscreen = sole();
 var _parsePasteImage = sole();
+var _hotkeyCtrled = sole();
 
 
 /**
@@ -651,10 +685,6 @@ proto[_initData] = function () {
  */
 proto[_initEvent] = function () {
     var the = this;
-    var ctrlKey = Hotkey.mac ? 'cmd' : 'ctrl';
-    var shiftKey = 'shift';
-    var altKey = 'alt';
-    var tabKey = 'tab';
     var keys = function () {
         return access.args(arguments).join('+');
     };
@@ -693,10 +723,10 @@ proto[_initEvent] = function () {
     });
     the.bind(keys(ctrlKey, altKey, 't'), the.table);
     the.bind(keys(ctrlKey, 'enter'), the.fullscreen);
-    event.on(the[_textareaEl], 'input select', the[_onInput] = fun.throttle(function () {
+    event.on(the[_textareaEl], inputSelectEventType, the[_onInput] = fun.throttle(function () {
         the[_pushHistory]();
     }));
-    event.on(the[_textareaEl], 'paste drop', the[_onPaste] = fun.bind(the[_parsePasteImage], the));
+    event.on(the[_textareaEl], pastDropEventType, the[_onPaste] = fun.bind(the[_parsePasteImage], the));
     the[_textarea] = new Textarea({
         el: the[_textareaEl],
         maxHeight: the[_options].maxHeight,
@@ -709,6 +739,73 @@ proto[_initEvent] = function () {
     the[_textarea].on('updateHeight', function (height) {
         attribute.style(the[_placeholderEl], 'height', height);
     });
+};
+
+proto[_initMention] = function () {
+    var the = this;
+    var options = the[_options];
+    var mentionStarted = false;
+    var mentionPressed = false;
+    var mentionPos = 0;
+    // @
+    var mentionStart = function (ev, keys) {
+        if (mentionStarted) {
+            mentionEnd();
+            return;
+        }
+
+        var line = the.getLines(true)[0];
+        var text = the.getText();
+        var selStart = line.selStart;
+        var atBeforeTxt = text.slice(0, selStart);
+        var atLeftChar = atBeforeTxt.slice(-1);
+
+        if (!text || /[\s\n]/.test(atLeftChar)) {
+            mentionStarted = true;
+            mentionPos = selStart;
+            the.ctrlHotkey(false);
+            the.emit('mentionStart');
+        }
+    };
+    var mentionPress = the[_onMentionPress] = function (ev) {
+        if (!mentionStarted) {
+            return;
+        }
+
+        if (!mentionPressed) {
+            mentionPressed = true;
+            return;
+        }
+
+        var line = the.getLines(true)[0];
+        var text = the.getText();
+        var selEnd = line.selStart;
+
+        if (mentionPos >= selEnd) {
+            mentionEnd();
+            return;
+        }
+
+        var mentioned = text.slice(mentionPos + 1, selEnd);
+
+        the.emit('mentionPress', mentioned);
+    };
+    var mentionEnd = function () {
+        if (!mentionStarted) {
+            return;
+        }
+
+        mentionStarted = false;
+        mentionPressed = false;
+        the.ctrlHotkey(true);
+        the.emit('mentionEnd');
+    };
+
+    the[_hotkey].bind(shiftKey + '+2', mentionStart);
+    event.on(the[_textareaEl], inputEventType, mentionPress);
+    the[_hotkey].bind('space', mentionEnd);
+    the[_hotkey].bind('esc', mentionEnd);
+    the[_hotkey].bind('enter', mentionEnd);
 };
 
 /**
