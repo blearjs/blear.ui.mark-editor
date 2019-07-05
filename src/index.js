@@ -89,6 +89,7 @@ var ctrlKey = Hotkey.mac ? 'cmd' : 'ctrl';
 var shiftKey = 'shift';
 var altKey = 'alt';
 var tabKey = 'tab';
+var nextTick = time.nextTick;
 var MarkEditor = UI.extend({
     className: 'MarkEditor',
     constructor: function (options) {
@@ -97,6 +98,10 @@ var MarkEditor = UI.extend({
         the[_options] = object.assign({}, defaults, options);
         the[_fullscreen] = false;
         the[_hotkeyCtrled] = true;
+        the[_mentionStarted] = false;
+        the[_mentionPressed] = false;
+        the[_mentionPos0] = 0;
+        the[_mentionPos1] = 0;
         MarkEditor.parent(the);
         the[_initNode]();
         the[_initData]();
@@ -234,6 +239,26 @@ var MarkEditor = UI.extend({
     ctrlHotkey: function (boolean) {
         var the = this;
         the[_hotkeyCtrled] = boolean;
+        return the;
+    },
+
+    /**
+     * 外部主动结束 mention 行为
+     * @returns {MarkEditor}
+     */
+    mentionEnd: function () {
+        var the = this;
+
+        if (!the[_mentionStarted]) {
+            return the;
+        }
+
+        the[_mentionStarted] = false;
+        the[_mentionPressed] = false;
+        nextTick(function () {
+            the.ctrlHotkey(true);
+            the.emit('mentionEnd', [the[_mentionPos0], the[_mentionPos1]]);
+        });
         return the;
     },
 
@@ -624,7 +649,10 @@ var _detachLines = sole();
 var _fullscreen = sole();
 var _parsePasteImage = sole();
 var _hotkeyCtrled = sole();
-
+var _mentionStarted = sole();
+var _mentionPressed = sole();
+var _mentionPos0 = sole();
+var _mentionPos1 = sole();
 
 /**
  * 初始化节点
@@ -675,7 +703,7 @@ proto[_initData] = function () {
 
     if (backup && backup.val.length > 0 && backup.val !== current.val) {
         // 异步发送
-        time.nextTick(function () {
+        nextTick(function () {
             the.emit('different', backup, current);
         });
     }
@@ -745,13 +773,9 @@ proto[_initEvent] = function () {
 proto[_initMention] = function () {
     var the = this;
     var options = the[_options];
-    var mentionStarted = false;
-    var mentionPressed = false;
-    var mentionPos0 = 0;
-    var mentionPos1 = 0;
     // @
     var mentionStart = function (ev, keys) {
-        if (mentionStarted) {
+        if (the[_mentionStarted]) {
             mentionEnd();
             return;
         }
@@ -763,44 +787,37 @@ proto[_initMention] = function () {
         var atLeftChar = atBeforeTxt.slice(-1);
 
         if (!text || /[\s\n]/.test(atLeftChar)) {
-            mentionStarted = true;
-            mentionPos0 = selStart + 1;
+            the[_mentionStarted] = true;
+            the[_mentionPos0] = the[_mentionPos1] = selStart + 1;
             the.ctrlHotkey(false);
-            the.emit('mentionStart', [mentionPos0, mentionPos0]);
+            the.emit('mentionStart', [the[_mentionPos0], the[_mentionPos1]]);
         }
     };
     var mentionPress = the[_onMentionPress] = function (ev) {
-        if (!mentionStarted) {
+        if (!the[_mentionStarted]) {
             return;
         }
 
-        if (!mentionPressed) {
-            mentionPressed = true;
+        if (!the[_mentionPressed]) {
+            the[_mentionPressed] = true;
             return;
         }
 
         var line = the.getLines(true)[0];
         var text = the.getText();
-        mentionPos1 = line.selStart;
+        the[_mentionPos1] = line.selStart;
 
         // 倒删除
-        if (mentionPos0 >= mentionPos1) {
+        if (the[_mentionPos0] >= the[_mentionPos1]) {
             mentionEnd();
             return;
         }
 
-        var mentioned = text.slice(mentionPos0, mentionPos1);
-        the.emit('mentionPress', mentioned, [mentionPos0, mentionPos1]);
+        var mentioned = text.slice(the[_mentionPos0], the[_mentionPos1]);
+        the.emit('mentionPress', mentioned, [the[_mentionPos0], the[_mentionPos1]]);
     };
     var mentionEnd = function () {
-        if (!mentionStarted) {
-            return;
-        }
-
-        mentionStarted = false;
-        mentionPressed = false;
-        the.ctrlHotkey(true);
-        the.emit('mentionEnd', [mentionPos0, mentionPos1]);
+        the.mentionEnd();
     };
 
     the[_hotkey].bind(shiftKey + '+2', mentionStart);
