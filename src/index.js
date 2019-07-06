@@ -952,7 +952,7 @@ proto[_parsePasteImage] = function (ev) {
         files = dataTransfer.files;
     }
 
-    if (!files) {
+    if (!files || !files.length) {
         return;
     }
 
