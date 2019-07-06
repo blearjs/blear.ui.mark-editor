@@ -953,7 +953,7 @@ proto[_parsePasteImage] = function (ev) {
     }
 
     if (!files) {
-        return false;
+        return;
     }
 
     var image = null;
