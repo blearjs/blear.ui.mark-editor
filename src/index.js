@@ -286,6 +286,7 @@ var MarkEditor = UI.extend({
     setSelection: function (sel) {
         var the = this;
         textarea.setSelection(the[_textareaEl], sel);
+        textarea.focus(the[_textareaEl]);
         return the;
     },
 
@@ -401,6 +402,7 @@ var MarkEditor = UI.extend({
     insert: function (text, mode) {
         var the = this;
         textarea.insert(the[_textareaEl], text, mode);
+        textarea.focus(the[_textareaEl]);
         the[_pushHistory]();
         return the;
     },
@@ -415,6 +417,7 @@ var MarkEditor = UI.extend({
     wrap: function (before, after, mode) {
         var the = this;
         textarea.wrap(the[_textareaEl], before, after, mode);
+        textarea.focus(the[_textareaEl]);
         return the;
     },
 
