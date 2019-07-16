@@ -496,29 +496,57 @@ var MarkEditor = UI.extend({
      * @returns {MarkEditor}
      */
     line: function () {
-        return this.insert('\n\n------\n\n', 2);
+        return this.insert('\n\n------\n\n');
     },
 
     /**
      * 插入链接
+     * @param text
+     * @param url
+     * @param [mode=2] {Number} 选区模式，0=选择链接文本，1=选择链接地址，2=末尾
      * @returns {MarkEditor}
      */
-    link: function (text, url) {
-        var start = 1;
-        var end = text.length + start;
-        return this.insert('[' + text + '](' + url + ')', [start, end]);
+    link: function (text, url, mode) {
+        var start = 0;
+        var end = 0;
+        var insertMode = 2;
+
+        if (mode === 0) {
+            start = 1;
+            end = start + text.length;
+            insertMode = [start, end];
+        } else if (mode === 1) {
+            start = 3 + text.length;
+            end = start + url.length;
+            insertMode = [start, end];
+        }
+
+        return this.insert('[' + text + '](' + url + ')', insertMode);
     },
 
     /**
      * 插入图片
      * @param alt
      * @param url
+     * @param [mode=2] {Number} 选区模式，0=选择图片文本，1=选择图片地址，2=末尾
      * @returns {MarkEditor}
      */
-    image: function (alt, url) {
-        var start = 2;
-        var end = start + alt.length;
-        return this.insert('![' + alt + '](' + url + ')', [start, end]);
+    image: function (alt, url, mode) {
+        var start = 0;
+        var end = 0;
+        var insertMode = 2;
+
+        if (mode === 0) {
+            start = 2;
+            end = start + alt.length;
+            insertMode = [start, end];
+        } else if (mode === 1) {
+            start = 4 + alt.length;
+            end = start + url.length;
+            insertMode = [start, end];
+        }
+
+        return this.insert('![' + alt + '](' + url + ')', insertMode);
     },
 
     /**
@@ -977,6 +1005,7 @@ proto[_parsePasteImage] = function (ev) {
         }
 
         the.image('粘贴图片', url);
+        the.focus();
     });
 
     return false;
