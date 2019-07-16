@@ -200,6 +200,7 @@ var MarkEditor = UI.extend({
         }
 
         the.setSelection(sel);
+        textarea.focus(the[_textareaEl]);
         return the;
     },
 
@@ -286,7 +287,6 @@ var MarkEditor = UI.extend({
     setSelection: function (sel) {
         var the = this;
         textarea.setSelection(the[_textareaEl], sel);
-        textarea.focus(the[_textareaEl]);
         return the;
     },
 
@@ -402,7 +402,6 @@ var MarkEditor = UI.extend({
     insert: function (text, mode) {
         var the = this;
         textarea.insert(the[_textareaEl], text, mode);
-        textarea.focus(the[_textareaEl]);
         the[_pushHistory]();
         return the;
     },
@@ -417,7 +416,6 @@ var MarkEditor = UI.extend({
     wrap: function (before, after, mode) {
         var the = this;
         textarea.wrap(the[_textareaEl], before, after, mode);
-        textarea.focus(the[_textareaEl]);
         return the;
     },
 
@@ -919,7 +917,6 @@ proto[_listenEnter] = function (ev) {
     );
 
     // 在末尾回车，自动将编辑器滚动到末尾
-    // @todo 判断光标是否在编辑器的可视区域内
     if (after === '') {
         the[_textareaEl].scrollTop = the[_textareaEl].scrollHeight;
     }
