@@ -45,7 +45,7 @@
     "blear.utils.function": "^1.0.5",
     "blear.utils.object": "^1.0.14",
     "blear.utils.string": "^1.0.11",
-    "blear.utils.textarea": "^1.1.1",
+    "blear.utils.textarea": "^1.2.0",
     "blear.utils.time": "^1.0.6"
   },
   "peerDependencies": {},
