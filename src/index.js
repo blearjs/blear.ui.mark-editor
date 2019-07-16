@@ -172,8 +172,6 @@ var MarkEditor = UI.extend({
         sel = sel || [length, length];
         the.setSelection(sel);
         the[_pushHistory]();
-        event.emit(the[_textareaEl], 'input');
-        event.emit(the[_textareaEl], 'change');
         return the;
     },
 
@@ -874,6 +872,8 @@ proto[_pushHistory] = function () {
         val: val
     });
     the.emit('change', val, sel);
+    event.emit(the[_textareaEl], 'input');
+    event.emit(the[_textareaEl], 'change');
 
     if (active && val !== active.val) {
         the[_textarea].updateHeight();
